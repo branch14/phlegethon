@@ -72,8 +72,8 @@ translation: "flaming") or Pyriphlegethon (Πυριφλεγέθων, English
 translation: "fire-flaming") was one of the five rivers in the
 infernal regions of the underworld, along with the rivers Styx, Lethe,
 Cocytus, and Acheron. Plato describes it as "a stream of fire, which
-coils round the earth and flows into the depths of Tartarus".[1] It
+coils round the earth and flows into the depths of Tartarus". It
 was parallel to the river Styx. It is said that the goddess Styx was
 in love with Phlegethon, but she was consumed by his flames and sent
 to Hades. Eventually when Hades allowed her river to flow through,
-they reunited.
+they reunited. [Wikipedia](https://en.wikipedia.org/wiki/Phlegethon)
