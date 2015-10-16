@@ -4,11 +4,21 @@ require 'json'
 require 'thin'
 require 'bunny'
 
+require 'pp'
+
 module Phlegethon
   module Exec
 
-    # TODO make exchange or queue name configurable
-    EXCHANGE = 'paypal'
+    DEFAULTS = {
+      'rabbitmq' => {
+        'exchange' => 'webhooks',
+        'host' => 'localhost'
+      },
+      'server' => {
+        'port' => 3002,
+        'ssl' => false
+      }
+    }
 
     extend self
 
@@ -17,17 +27,31 @@ module Phlegethon
     def run(args)
       init_bunny
       # TODO make port and bind address configurable
-      server = Thin::Server.new('0.0.0.0', 3002, handler)
+      server = Thin::Server.new('0.0.0.0', config['server']['port'], handler)
       server.start
     end
 
     def handler
       ->(env) {
-        # TODO perform business logic on posted data
-        output = deep_encode(env, 'UTF-8')
-        exchange.publish(JSON.unparse(output))
+        pp env
+        req = Rack::Request.new(env)
+
+        # perform some business logic on posted data
+        message = deep_encode({
+          'params'      => req.params,
+          'method'      => req.request_method,
+          'url'         => req.url,
+          'user_agent'  => req.user_agent
+        })
+        case req.content_type
+        when 'application/json'
+          message['payload'] = JSON.parse(req.body.read)
+        else
+          message = deep_encode(env)
+        end
+        exchange.publish(JSON.unparse(message))
         # TODO make debug response configurable
-        [200, {'Content-Type' => 'text/plain'}, output.to_yaml]
+        [200, {'Content-Type' => 'text/plain'}, message.to_yaml]
       }
     end
 
@@ -37,11 +61,11 @@ module Phlegethon
       bunny = Bunny.new read_timeout: 10, heartbeat: 10
       bunny.start
       bunny_channel = bunny.create_channel
-      self.exchange = bunny_channel.fanout(EXCHANGE)
+      self.exchange = bunny_channel.fanout(config['rabbitmq']['exchange'])
     end
 
     # TODO move to gem trickery
-    def deep_encode(data, enc)
+    def deep_encode(data, enc='UTF-8')
       case data
       when String
         data.encode(enc)
@@ -53,6 +77,26 @@ module Phlegethon
         end
       else data
       end
+    end
+
+    def config
+      @config ||= DEFAULTS.merge(YAML.load(File.read(config_path)))
+    end
+
+    def config_path
+      config_path_candidates.each do |f|
+        if File.exist?(f)
+          puts "Reading config from #{f}"
+          return f
+        end
+      end
+      warn 'config file not found'
+      exit
+    end
+
+    def config_path_candidates
+      [ './phlegethon.yml',
+        ENV['HOME'] + '/.phlegethon.yml' ]
     end
 
   end

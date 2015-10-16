@@ -8,10 +8,8 @@
 Welcome to phlegethon
 =====================
 
-Phlegethon is an endpoint for
-[PayPal Webhooks](https://developer.paypal.com/docs/integration/direct/rest-webhooks-overview/)
-which forwards all requests to
-[RabbitMQ](https://www.rabbitmq.com/).
+Phlegethon is a generic endpoint for Webhooks which forwards all
+requests to [RabbitMQ](https://www.rabbitmq.com/).
 
 ## Installation
 
@@ -43,15 +41,20 @@ It will look for a config file in the following places
 A phlegethon config file may look like this; these are the defaults
 
     rabbitmq:
-      extension: paypal
+      exchange: webhooks
       host: localhost
     server:
-      port: 9292
-      ssl: true
+      port: 3002
+      ssl: false
+
+
+With the above config you can test you endpoint with curl
+
+    curl -d '{"hey":"ho"}' -H 'Content-type: application/json' http://localhost:3002
 
 ## Prerequisites
 
-To use phlegethon with https you have to have libssl-dev installed
+To use phlegethon with https you have to have `libssl-dev` installed
 before installing eventmachine.
 
     apt-get install libssl-dev
