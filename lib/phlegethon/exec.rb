@@ -15,6 +15,7 @@ module Phlegethon
         'host' => 'localhost'
       },
       'server' => {
+        'ip' => '0.0.0.0',
         'port' => 3002,
         'ssl' => false
       }
@@ -26,8 +27,9 @@ module Phlegethon
 
     def run(args)
       init_bunny
-      # TODO make port and bind address configurable
-      server = Thin::Server.new('0.0.0.0', config['server']['port'], handler)
+      server = Thin::Server.new(config['server']['ip'],
+                                config['server']['port'],
+                                handler)
       server.start
     end
 
