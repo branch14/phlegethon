@@ -1,5 +1,103 @@
 #!/usr/bin/env ruby
 
+require 'optparse'
+require 'yaml'
+require 'pp'
+
+require 'trickery/hash/deep_merge'
+require 'trickery/hash/deep_ostruct'
+
 require File.expand_path(File.join(%w(.. .. lib phlegethon)), __FILE__)
 
-Phlegethon::Exec.run(ARGV)
+# TODO move to trickery 0.0.5
+class Configurability < Struct.new(:prefix, :fields)
+
+  def default_opts
+    @default_opts ||= nested_hash.tap do |opts|
+      fields.each do |field|
+        names = field[2].split('.')
+        value = opts
+        names.each do |name|
+          if name == names.last
+            value[name] = field[3]
+          else
+            value = value[name]
+          end
+        end
+      end
+    end
+  end
+
+  def cli_opts(args)
+    @cli_opts ||= nested_hash.tap do |opts|
+      args.options do |o|
+        fields.each do |field|
+          o.on(field[0], field[1]+'=val', String) do |val|
+            names = field[2].split('.')
+            value = opts
+            names.each do |name|
+              if name == names.last
+                value[name] = val
+              else
+                value = value[name]
+              end
+            end
+          end
+        end
+        o.parse!
+      end
+    end
+  end
+
+  def env_opts
+    @env_opts ||= nested_hash.tap do |opts|
+      fields.each do |field|
+        env = (prefix+'.'+field[2]).upcase.tr('.', '_')
+        if val = ENV[env]
+          names = field[2].split('.')
+          value = opts
+          names.each do |name|
+            if name == names.last
+              value[name] = val
+            else
+              value = value[name]
+            end
+          end
+        end
+      end
+    end
+  end
+
+  def file_opts(file)
+    return {} unless File.exist?(file)
+    YAML.load(File.read(file))
+  end
+
+  def digest(args)
+    opts = default_opts.deep_merge(env_opts, cli_opts(args))
+    file = opts['configfile']
+    default_opts.deep_merge(file_opts(file), env_opts, cli_opts(args))
+  end
+
+  private
+
+  # TODO move to trickery `Hash.new_nested`
+  def nested_hash
+    Hash.new { |h,k| h[k] = Hash.new(&h.default_proc) }
+  end
+
+end
+
+configfile = File.expand_path('phlegethon.yml', Dir.pwd)
+
+config = Configurability.new('phlegethon', [
+  %w( -c --config   configfile ) << configfile,
+  %w( -x --exchange rabbitmq.exchange phlegethon ),
+  %w( -h --host     rabbitmq.host     localhost ),
+  %w( -p --port     endpoint.port     3002 ),
+  %w( -s --ssl      endpoint.ssl      false ),
+]).digest(ARGV)
+
+pp config
+
+Phlegethon::Exec.new(config.deep_ostruct).run

@@ -11,6 +11,7 @@ Welcome to phlegethon
 Phlegethon is a generic endpoint for Webhooks which forwards all
 requests to [RabbitMQ](https://www.rabbitmq.com/).
 
+
 ## Installation
 
 Add this line to your application's Gemfile:
@@ -25,6 +26,7 @@ Or install it yourself as:
 
     $ gem install phlegethon
 
+
 ## Usage
 
 Simply run
@@ -35,6 +37,7 @@ It will look for a config file in the following places
 
     ./phlegethon.yml
     ~/.phlegethon.yml
+
 
 ## Configuration
 
@@ -52,6 +55,7 @@ With the above config you can test you endpoint with curl
 
     curl -d '{"hey":"ho"}' -H 'Content-type: application/json' http://localhost:3002
 
+
 ## Prerequisites
 
 To use phlegethon with https you have to have `libssl-dev` installed
@@ -60,6 +64,21 @@ before installing eventmachine.
     apt-get install libssl-dev
     gem install eventmachine
 
+
+## Use with Docker
+
+Works nicely with https://hub.docker.com/_/rabbitmq/, hence...
+
+    export RABBITMQ_MANAGEMENT_PORT=15672
+    export PHLEGETHON_PORT=3002
+
+    docker run -h rabbit --name rabbitmq -p $RABBITMQ_MANAGEMENT_PORT:15672 rabbitmq:3-management
+    docker run --link rabbitmq -p $PHLEGETHON_PORT:3002 branch14/phlegethon
+
+To build the image from the Dockerfile run
+
+    docker build -t branch14/phlegethon .
+
 ## Contributing
 
 1. Fork it
@@ -67,6 +86,7 @@ before installing eventmachine.
 3. Commit your changes (`git commit -am 'Add some feature'`)
 4. Push to the branch (`git push origin my-new-feature`)
 5. Create new Pull Request
+
 
 ## Trivia
 
@@ -81,3 +101,10 @@ Styx. It is said that the goddess Styx was in love with Phlegethon,
 but she was consumed by his flames and sent to Hades. Eventually when
 Hades allowed her river to flow through, they
 reunited. [Wikipedia](https://en.wikipedia.org/wiki/Phlegethon)
+
+
+## Todo
+
+* improve configurabilty (cli), steal from acheron
+* make it work with ssl
+* daemonize, steal from acheron

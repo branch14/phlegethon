@@ -7,28 +7,14 @@ require 'bunny'
 require 'pp'
 
 module Phlegethon
-  module Exec
-
-    DEFAULTS = {
-      'rabbitmq' => {
-        'exchange' => 'webhooks',
-        'host' => 'localhost'
-      },
-      'server' => {
-        'ip' => '0.0.0.0',
-        'port' => 3002,
-        'ssl' => false
-      }
-    }
-
-    extend self
+  class Exec < Struct.new(:config)
 
     attr_accessor :exchange
 
-    def run(args)
+    def run
       init_bunny
-      server = Thin::Server.new(config['server']['ip'],
-                                config['server']['port'],
+      server = Thin::Server.new(config.endpoint.host,
+                                config.endpoint.port,
                                 handler)
       server.start
     end
@@ -59,11 +45,15 @@ module Phlegethon
 
     # TODO steal recoonect from simon or monitoring in vr_dev
     def init_bunny
-      # TODO make bunny configurable
-      bunny = Bunny.new read_timeout: 10, heartbeat: 10
+      opts = {
+        read_timeout: 10,
+        heartbeat: 10,
+        host: config.rabbitmq.host
+      }
+      bunny = Bunny.new(opts)
       bunny.start
       bunny_channel = bunny.create_channel
-      self.exchange = bunny_channel.fanout(config['rabbitmq']['exchange'])
+      self.exchange = bunny_channel.fanout(config.rabbitmq.exchange)
     end
 
     # TODO move to gem trickery
@@ -79,26 +69,6 @@ module Phlegethon
         end
       else data
       end
-    end
-
-    def config
-      @config ||= DEFAULTS.merge(YAML.load(File.read(config_path)))
-    end
-
-    def config_path
-      config_path_candidates.each do |f|
-        if File.exist?(f)
-          puts "Reading config from #{f}"
-          return f
-        end
-      end
-      warn 'config file not found'
-      exit
-    end
-
-    def config_path_candidates
-      [ './phlegethon.yml',
-        ENV['HOME'] + '/.phlegethon.yml' ]
     end
 
   end

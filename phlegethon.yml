@@ -1,6 +1,0 @@
-rabbitmq:
-  exchange: webhooks
-  host: localhost
-server:
-  port: 3002
-  ssl: false

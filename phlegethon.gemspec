@@ -8,8 +8,8 @@ Gem::Specification.new do |spec|
   spec.version       = Phlegethon::VERSION
   spec.authors       = ["Phil Hofmann"]
   spec.email         = ["phil@branch14.org"]
-  spec.description   = %q{Bridging PayPal Webhooks to RabbitMQ}
-  spec.summary       = %q{Bridging PayPal Webhooks to RabbitMQ}
+  spec.description   = %q{Bridging Webhooks to RabbitMQ}
+  spec.summary       = %q{Bridging Webhooks to RabbitMQ}
   spec.homepage      = "http://github.com/branch14/phlegethon"
   spec.license       = "MIT"
 
@@ -23,4 +23,5 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'bunny'
   spec.add_dependency 'thin'
+  spec.add_dependency 'trickery', '~> 0.0.4'
 end
